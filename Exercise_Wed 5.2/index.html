@@ -4,12 +4,70 @@
     <meta charset="UTF-8">
     <title>Horizontal Stacked Bar Chart</title>
     <script src="../libs/d3/d3.min.js"></script>
-
 </head>
 <body>
-<div style="width: 80%"></div>
-<script>
 
+<div width="100%">
+    <svg id="barchart" width="100%" height="100%" viewBox="0 0 1000 800">
+    </svg>
+</div>
+<script>
+    let svg = d3.select('svg#barchart');
+    let margins = {x:90, y:80};
+    barcolours = ["#98abc5", "#8a89a6", "#7b6888", "#6b486b"];
+
+    // get the data
+    d3.csv('./data_sample.csv', d3.autoType)
+        .then(function (data){
+
+            // create stack
+            let create_stack = d3.stack()
+                .keys(['EstimatedCost','RawMaterial','Workmanship','YearlyStorage'])
+            let stacks = create_stack(data);
+
+            // get the scale for the x axis
+            let range = svg.attr('viewBox').split(' ');
+            range = d3.map(range, function(d){return parseInt(d)});
+            let xRange = [range[0] + margins.x, range[2] - margins.x];
+            let maxvalue = 0;
+            data.forEach(function(d){
+                let sum_values = d.EstimatedCost + d.RawMaterial + d.Workmanship + d.YearlyStorage;
+                if(sum_values > maxvalue){
+                    maxvalue = sum_values;
+                }
+            })
+            let x_Extent = [0,maxvalue];
+            let xScale = d3.scaleLinear().domain(x_Extent).range(xRange);
+           <!-- -------------------------------------------------------->
+            let charts = svg.selectAll('g')
+                .data(stacks)
+                .enter()
+                .append('g')
+                .style('fill', function(d,i){return barcolours[i]});
+
+
+            charts.selectAll('rect')
+                .data(function(d){return d;})
+                .enter()
+                .append('rect')
+                .attr('width', function(d){return xScale(d[1] - d[0]); console.log(d);})
+                .attr('height', function(d){return 20;})
+                .attr('x', function(d){return xScale(d[0]);})
+                .attr('y', function(d, i){return i * 30;})
+
+
+            let labels = charts.selectAll('text')
+                .data(data)
+                .enter()
+                .append('text')
+                .attr('class', 'labels')
+                .attr('x', 10)
+                .attr('y', function(d,i){return i * 30 + 18;})
+                .text(function(d){return (((d.date.getMonth() +1).toString()).padStart(2,'0')) + ' / ' + d.date.getFullYear();})
+
+
+        })
 </script>
+
 </body>
 </html>
